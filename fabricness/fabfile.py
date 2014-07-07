@@ -15,8 +15,8 @@ import util
 @task
 def environment(aws_environment):
     '''
-    ** Sets environments named in ~/.aws/config file. Required by all actions
-        See: https://wiki.whalesharkmedia.com/display/GEO/Situ#Situ-Creden
+    ** Sets environments named in ~/.aws/config file.  for wrapping aws-cli utilities
+
     Args:
         aws_environment:string
     '''
