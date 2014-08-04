@@ -4,13 +4,35 @@
 # | |_   / /\  | |_) | |_) | | / /`  | |\ | | |_  ( (` ( (`
 # |_|   /_/--\ |_|_) |_| \ |_| \_\_, |_| \| |_|__ _)_) _)_)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-#  basic fabric tasks for productivity
-
+#  basic fabric tasks for productivity; in this case: utity!
+#
+#  If you find yourself repeating some sort of general form,
+#   make it a utility function today!
+#
 
 from common import *
+
+
+__all__ = [
+    'get_processorcount',
+    'get_physicalprocessorcount',
+    'get_osfamily',
+    'resolve_installer',
+    'install_package',
+    'command',
+    'sudo_command',
+    'check_for_binary',
+    'pgrep',
+    'dpkg_grep'
+]
+
 @task
 @parallel
 def get_processorcount():
+    '''
+    return the processor count via facter
+
+    '''
     rslt = sudo_command("facter processorcount")
     if rslt.succeeded:
         return int(rslt)
@@ -21,6 +43,10 @@ def get_processorcount():
 @task
 @parallel
 def get_physicalprocessorcount():
+    '''
+    return the physicalprocessorcount count via facter
+
+    '''
     rslt = sudo_command("facter physicalprocessorcount")
     if rslt.succeeded:
         return int(rslt)
@@ -31,6 +57,10 @@ def get_physicalprocessorcount():
 @task
 @parallel
 def get_osfamily():
+    '''
+    return os family via facter
+
+    '''
     rslt = run("facter osfamily")
     if rslt.succeeded:
         return "{}".format(rslt)
@@ -40,6 +70,9 @@ def get_osfamily():
 
 @parallel
 def resolve_installer():
+    '''
+    figure out if we use yum or apt
+    '''
     osfamily = get_osfamily()
     with settings(clean_revert=True):
         if osfamily == "Debian":
@@ -54,6 +87,12 @@ def resolve_installer():
 @task
 @parallel
 def install_package(package):
+    '''
+    install a package on a host
+
+    Args:
+        command:package
+    '''
     with settings(clean_revert=True):
         resolve_installer()
         require('INSTALLER')
@@ -69,6 +108,9 @@ def install_package(package):
 def command(command):
     '''
     run an arbitrary command; intended for use from within fabric because it will bust up cli arguments into a list
+
+    Args:
+        command:string
     '''
     with settings(warn_only=True):
         return run("%s" % command)
@@ -79,13 +121,22 @@ def command(command):
 def sudo_command(command):
     '''
     run an arbitrary sudo command; intended for use from within fabric because it will bust up cli arguments into a list
+
+    Args:
+        binary_name:string
     '''
     with settings(warn_only=True):
         return sudo(command)
 
-
+@task
 @parallel
 def check_for_binary(binary_name):
+    '''
+    check for a binary via 'which' command
+
+    Args:
+        binary_name:string
+    '''
     with hide('everything'):
         we_good = run('which {}'.format(binary_name))
         if we_good.succeeded:
@@ -93,22 +144,44 @@ def check_for_binary(binary_name):
         else:
             return False
 
+
 @task
 @parallel
-def volume_cuddler(volume):
+def pgrep(binary_name=None,user=None):
     '''
-    WAARM YER DISKS YA HEARD.  Need to set host, and hand it a block device path: i.e. /dev/xvdca
+    run pgrep for a binary; can specify binary_name or user for filtering
+
     Args:
-        volume
-    Returns:
-        bool
+        binary_name:string
+        user: string
     '''
-    # sudo kill -USR1 $(pgrep '^dd') shows progress... how do we set up a timer to barf that out periodically?
-    #require('environment')
-    with settings(warn_only=True):
-        rslt = sudo('dd if=/dev/zero of={} bs=1M'.format(volume))
-        if rslt.succeeded:
-            puts("yer disk {} has been spooned on a bear-skin rug in front of a fireplace... it's ready for your use".format(volume))
-            return True
+    b_arg=''
+    u_arg=''
+    with hide('everything'):
+        try:
+            if binary_name:
+                b_arg = " -f {0} ".format(binary_name)
+            if user:
+                u_arg = " -u {0}".format(user)
+            command = 'pgrep {0} {1}'.format(u_arg, b_arg)
+        except TypeError as e:
+            warn('invalid arguments: {0}'.format(e.message))
         else:
-            return False
+            rslt = sudo_command(command)
+            if rslt.succeeded:
+                return rslt
+            else:
+                return None
+
+
+@task
+@parallel(pool_size=7)
+def dpkg_grep(package):
+    m=re.compile(package)
+    with hide('everything'):
+        rslt = sudo('dpkg -l |grep {0}'.format(package))
+        if rslt.succeeded:
+            if m.search(rslt):
+                return True
+            else:
+                return False

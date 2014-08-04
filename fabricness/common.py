@@ -30,6 +30,17 @@ env.my_sleep = 5
 
 env.template_dir = "templates"
 env.LOGDIR = "logs"
-env.INSTALLER = "yum -y"
+env.INSTALLER = "apt-get "
+
+import lib
+import util
+import service
+### import some local libraries
+import cpu
+import disk
+import fluentd
+import network
+import puppet
+import sensu
 
 
