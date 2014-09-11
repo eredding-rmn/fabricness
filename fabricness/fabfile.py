@@ -41,7 +41,8 @@ def region(aws_region):
 @task
 def set_hosts_by_ident(ident,vpc_id=None):
     '''
-    AWS: set the hosts variable via aws cli command that filters on the name tag; ident is the unique identifier in the name tag.
+    AWS: set the hosts variable via aws cli command that filters on the
+        name tag; ident is the unique identifier in the name tag.
 
     Requires: region, profile
 
@@ -54,10 +55,17 @@ def set_hosts_by_ident(ident,vpc_id=None):
     if not ident:
         abort("an identifier is required!")
     try:
-        lib.get_ec2_hosts(region=env.aws_region,profile=env.aws_profile,filters={'tag:Name': '*{0}*'.format(ident), 'instance-state-name': 'running'},avpc=vpc_id)
+        lib.get_ec2_hosts(
+            region=env.aws_region,
+            profile=env.aws_profile,
+            host_filter=ident,
+            filters={'instance-state-name': 'running'},
+            avpc=vpc_id
+        )
     except Exception as e:
         abort("failure during host list generation!  message: {0}".format(e))
     if env.hosts:
+        print("{0}".format(green('gateway: {0}'.format(env.gateway))))
         print("{0}".format(green('set hosts: ')))
         for host in env.hosts:
             print ("    {0}".format(green(host)))

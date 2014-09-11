@@ -13,14 +13,16 @@
 from common import *
 
 
-def get_ec2_hosts(region, profile, filters, avpc=None):
+def get_ec2_hosts(region, profile, filters, host_filter=None, avpc=None):
     '''
     acky call to list hosts and set the env.hosts list in python
+
+    We use host_filter, out of band, because we sort out the perimeter server
     '''
     raw_hosts_list = get_hostlist(region, profile, filters, avpc)
     if not raw_hosts_list:
         abort('no hosts found!')
-    host_map = filter_hosts_by_ec2_type(raw_hosts_list)
+    host_map = filter_hosts(raw_hosts_list, host_filter)
 
     if avpc:
         env.hosts = host_map.get(avpc).get('hosts')
@@ -66,7 +68,7 @@ def set_host_alias_list(host, alias):
     env.host_aliases[host] = alias
 
 
-def filter_hosts_by_ec2_type(raw_hosts_list):
+def filter_hosts(raw_hosts_list, host_filter):
     ec2_host_mapping = {
         'classic': {
             'hosts': [],
@@ -77,20 +79,24 @@ def filter_hosts_by_ec2_type(raw_hosts_list):
         vpcid = hst.get('VpcId')
         hn = get_tag(hst, 'Name')
         ip = hst.get('PrivateIpAddress')
+        pub_ip = hst.get('PublicIpAddress')
         gwfound = re.search(env.gateway_host_ident, hn)
+        hstmatch = re.search(host_filter, hn)
         if not hn:
             hn = ip
         if vpcid is None:
-            ec2_host_mapping['classic']['hosts'].append(hn)
+            if hstmatch:
+                ec2_host_mapping['classic']['hosts'].append(hn)
             if gwfound:
-                ec2_host_mapping['classic'].update({'gateway': hn})
+                ec2_host_mapping['classic']['gateway'] =  pub_ip
         else:
             # if we we don't see the vpc, we stub out the corpse
             if not ec2_host_mapping.get(vpcid):
                 ec2_host_mapping[vpcid] = {'hosts': [], 'gateway': None}
-            ec2_host_mapping[vpcid]['hosts'].append(hn)
+            if hstmatch:
+                ec2_host_mapping[vpcid]['hosts'].append(hn)
             if gwfound:
-                ec2_host_mapping[vpc].update({'gateway': hn})
+                ec2_host_mapping[vpcid]['gateway'] = pub_ip
         set_host_alias_list(hn, ip)
     return ec2_host_mapping
 
