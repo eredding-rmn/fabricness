@@ -12,6 +12,7 @@
 
 from common import *
 from lib.stfutask import StfuTask
+from lib.awstask import AwsTask
 
 __all__ = [
     'get_processorcount',
@@ -23,7 +24,8 @@ __all__ = [
     'sudo_command',
     'check_for_binary',
     'pgrep',
-    'dpkg_grep'
+    'dpkg_grep',
+    'testing'
 ]
 
 @task
@@ -172,7 +174,11 @@ def pgrep(binary_name=None, user=None):
     else:
         rslt = command(cmd)
         if rslt.succeeded:
-            print('> {0} :: Found process based on {1}: {2}'.format(env.host_string, term, rslt))
+            print(
+                '> {0} :: Found process based on {1}: {2}'.format(
+                    env.host_string, term, rslt
+                )
+            )
             return rslt
         else:
             return None
@@ -189,3 +195,15 @@ def dpkg_grep(package):
                 return True
             else:
                 return False
+
+
+
+@task(task_class=AwsTask)
+def testing():
+    '''
+    Stub debug task for outputting all that it knows...
+    '''
+    print 'dir {0}'.format(dir())
+    print 'env {0}'.format(env)
+    puts('yay: '.format(env.aws_connection))
+    pass

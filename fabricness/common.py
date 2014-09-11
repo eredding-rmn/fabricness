@@ -28,6 +28,8 @@ env.my_poll_timeout = 780
 env.my_sleep = 5
 env.abort_on_prompts = True
 
+env.aws_connection = None
+
 env.host_aliases = {}
 
 env.template_dir = "templates"
@@ -38,6 +40,8 @@ env.gateway_host_ident = 'eop-sec-prt-001'
 import lib
 import util
 import service
+from lib.stfutask import StfuTask
+from lib.awstask import AwsTask
 ### import some local libraries
 import apt
 import cpu
@@ -46,3 +50,5 @@ import fluentd
 import network
 import puppet
 import sensu
+import disk.mdadm as mdadm
+import disk.ebs as ebs

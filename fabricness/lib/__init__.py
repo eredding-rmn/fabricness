@@ -11,6 +11,7 @@
 
 
 from common import *
+from functools import wraps
 
 
 def get_ec2_hosts(region, profile, filters, host_filter=None, avpc=None):
@@ -47,25 +48,28 @@ def get_ec2_hosts(region, profile, filters, host_filter=None, avpc=None):
 
 def get_aws_connection(region, profile):
     from acky.aws import AWS
+    if env.aws_connection:
+        return True
     try:
-        aws_conn = AWS(region, profile)
+        env.aws_connection = AWS(region, profile)
     except Exception as e:
         abort('connection error!  message: {0}'.format(e))
         return False
-    return aws_conn
+    return True
 
 
 def get_hostlist(region, profile, filters, avpc=None):
-    aws_conn = get_aws_connection(region, profile)
+    if not env.aws_connection:
+        get_aws_connection(region, profile)
     try:
-        return aws_conn.ec2.Instances.get(filters=filters)
+        return env.aws_connection.ec2.Instances.get(filters=filters)
     except Exception as e:
         abort('get instance error: {0}'.format(e))
         return False
 
 
-def set_host_alias_list(host, alias):
-    env.host_aliases[host] = alias
+def set_host_dict(host, info_dict):
+    env.host_aliases[host] = info_dict
 
 
 def filter_hosts(raw_hosts_list, host_filter):
@@ -80,6 +84,8 @@ def filter_hosts(raw_hosts_list, host_filter):
         hn = get_tag(hst, 'Name')
         ip = hst.get('PrivateIpAddress')
         pub_ip = hst.get('PublicIpAddress')
+        inst_id = hst.get('InstanceId')
+        az = hst.get('AvailabilityZone')
         gwfound = re.search(env.gateway_host_ident, hn)
         if host_filter:
             hstmatch = re.search(host_filter, hn)
@@ -100,7 +106,15 @@ def filter_hosts(raw_hosts_list, host_filter):
                 ec2_host_mapping[vpcid]['hosts'].append(hn)
             if gwfound:
                 ec2_host_mapping[vpcid]['gateway'] = pub_ip
-        set_host_alias_list(hn, ip)
+        hst_dict = {
+            'aliases': [ip, inst_id],
+            'private_ip': ip,
+            'public_ip': pub_ip,
+            'id': inst_id,
+            'vpc': vpcid,
+            'az': az
+        }
+        env.host_aliases[hn] = AttributeDict(hst_dict)
     return ec2_host_mapping
 
 
@@ -118,3 +132,61 @@ def get_tag(tags, tagname):
     for tag in ltags:
         if tag.get('Key') == tagname:
             return tag.get('Value')
+
+
+
+
+
+class AttributeDict(dict):
+    """
+    Dictionary subclass enabling attribute lookup/assignment of keys/values.
+    (this is similar to the one in fabric's library)
+
+    For example::
+
+        >>> m = _AttributeDict({'foo': 'bar'})
+        >>> m.foo
+        'bar'
+        >>> m.foo = 'not bar'
+        >>> m['foo']
+        'not bar'
+
+    ``_AttributeDict`` objects also provide ``.first()`` which acts like
+    ``.get()`` but accepts multiple keys as arguments, and returns the value of
+    the first hit, e.g.::
+
+        >>> m = _AttributeDict({'foo': 'bar', 'biz': 'baz'})
+        >>> m.first('wrong', 'incorrect', 'foo', 'biz')
+        'bar'
+
+    """
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError:
+            # to conform with __getattr__ spec
+            raise AttributeError(key)
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+    def first(self, *names):
+        for name in names:
+            value = self.get(name)
+            if value:
+                return value
+
+
+
+def aws_connection(f):
+    @wraps(f)
+    def get_aws_connection(*args, **kwargs):
+        from acky.aws import AWS
+        try:
+            env.aws_conn = AWS(region, profile)
+        except Exception as e:
+            raise ('connection error!  message: {0}'.format(e))
+        else:
+            return f(*args, **kwds)
+    return get_aws_connection
+
