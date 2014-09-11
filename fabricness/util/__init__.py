@@ -11,7 +11,7 @@
 #
 
 from common import *
-
+from lib.stfutask import StfuTask
 
 __all__ = [
     'get_processorcount',
@@ -120,13 +120,15 @@ def command(command):
 @parallel
 def sudo_command(command):
     '''
-    run an arbitrary sudo command; intended for use from within fabric because it will bust up cli arguments into a list
+    run an arbitrary sudo command; intended for use from within fabric
+      because it will bust up cli arguments into a list
 
     Args:
         binary_name:string
     '''
     with settings(warn_only=True):
         return sudo(command)
+
 
 @task
 @parallel
@@ -145,9 +147,9 @@ def check_for_binary(binary_name):
             return False
 
 
-@task
+@task(task_class=StfuTask)
 @parallel
-def pgrep(binary_name=None,user=None):
+def pgrep(binary_name=None, user=None):
     '''
     run pgrep for a binary; can specify binary_name or user for filtering
 
@@ -155,29 +157,31 @@ def pgrep(binary_name=None,user=None):
         binary_name:string
         user: string
     '''
-    b_arg=''
-    u_arg=''
-    with hide('everything'):
-        try:
-            if binary_name:
-                b_arg = " -f {0} ".format(binary_name)
-            if user:
-                u_arg = " -u {0}".format(user)
-            command = 'pgrep {0} {1}'.format(u_arg, b_arg)
-        except TypeError as e:
-            warn('invalid arguments: {0}'.format(e.message))
+    b_arg = ''
+    u_arg = ''
+    try:
+        if binary_name:
+            b_arg = " -f {0} ".format(binary_name)
+            term = binary_name
+        if user:
+            u_arg = " -u {0}".format(user)
+            term = user
+        cmd = 'pgrep -o {0} {1}'.format(u_arg, b_arg)
+    except TypeError as e:
+        warn('invalid arguments: {0}'.format(e.message))
+    else:
+        rslt = command(cmd)
+        if rslt.succeeded:
+            print('> {0} :: Found process based on {1}: {2}'.format(env.host_string, term, rslt))
+            return rslt
         else:
-            rslt = sudo_command(command)
-            if rslt.succeeded:
-                return rslt
-            else:
-                return None
+            return None
 
 
 @task
 @parallel(pool_size=7)
 def dpkg_grep(package):
-    m=re.compile(package)
+    m = re.compile(package)
     with hide('everything'):
         rslt = sudo('dpkg -l |grep {0}'.format(package))
         if rslt.succeeded:
