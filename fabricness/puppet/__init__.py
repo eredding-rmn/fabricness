@@ -6,8 +6,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #  basic fabric tasks for productivity; in this case: PUPPET
 
-from fabric.colors import *
-from fabric.api import *
+from common import *
 
 
 __all__ = [
@@ -18,7 +17,7 @@ __all__ = [
 
 ## Puppet Run -- By tag
 @task
-@parallel(pool_size=7)
+@parallel
 def by_tag(tags, debug=False):
     '''
     run puppet agent and specify a tag
@@ -42,7 +41,7 @@ def by_tag(tags, debug=False):
 
 ## Puppet Run -- NOOP
 @task
-@parallel(pool_size=7)
+@parallel
 def noop(debug=False):
     '''
     run puppet agent in noop mode
@@ -60,7 +59,7 @@ def noop(debug=False):
 
 ## Puppet Run -- All Classes
 @task
-@parallel(pool_size=7)
+@parallel
 def agent(debug=False):
     '''
     run puppet agent (yeah - the whole thing)
@@ -74,3 +73,10 @@ def agent(debug=False):
             return True
         else:
             return None
+
+@task
+def puppetmaster_update():
+    '''
+        git pull repo and restart apache
+    '''
+    pass

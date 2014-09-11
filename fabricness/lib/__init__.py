@@ -88,7 +88,7 @@ def filter_hosts(raw_hosts_list, host_filter):
             if hstmatch:
                 ec2_host_mapping['classic']['hosts'].append(hn)
             if gwfound:
-                ec2_host_mapping['classic']['gateway'] =  pub_ip
+                ec2_host_mapping['classic']['gateway'] = pub_ip
         else:
             # if we we don't see the vpc, we stub out the corpse
             if not ec2_host_mapping.get(vpcid):

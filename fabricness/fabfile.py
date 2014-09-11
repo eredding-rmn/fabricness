@@ -11,11 +11,11 @@
 from common import *
 
 
-
 @task
 def profile(aws_profile):
     '''
-    Sets global variable for an aws config profile in ~/.aws/config.  set when leveraging aws-cli utility calls prefixed with AWS in help
+    Sets global variable for an aws config profile in ~/.aws/config.
+    set when leveraging aws-cli utility calls prefixed with AWS in help
 
     Args:
         aws_profile:string
@@ -28,7 +28,8 @@ def profile(aws_profile):
 @task
 def region(aws_region):
     '''
-    Sets global variable for an aws region.  set when leveraging aws-cli utility calls prefixed with AWS in help
+    Sets global variable for an aws region.
+     Set when leveraging aws-cli utility calls prefixed with AWS in help
 
     Args:
         aws_region:string
@@ -39,7 +40,7 @@ def region(aws_region):
 
 
 @task
-def set_hosts_by_ident(ident,vpc_id=None):
+def set_hosts_by_ident(ident, vpc_id=None):
     '''
     AWS: set the hosts variable via aws cli command that filters on the
         name tag; ident is the unique identifier in the name tag.
@@ -78,7 +79,7 @@ def set_hosts_by_ident(ident,vpc_id=None):
 @task
 def set_all_hosts():
     '''
-    AWS: set the hosts variable via aws cli command that filters on the name tag; ident is the unique identifier in the name tag.
+    AWS: set the hosts variable via aws api
 
     Requires: region, profile
 
@@ -88,7 +89,11 @@ def set_all_hosts():
     require('aws_profile')
     require('aws_region')
 
-    lib.get_ec2_hosts(region=env.aws_region,profile=env.aws_profile,filters={'instance-state-name':'running'})
+    lib.get_ec2_hosts(
+        region=env.aws_region,
+        profile=env.aws_profile,
+        filters={'instance-state-name': 'running'}
+    )
     if env.hosts:
         puts("{0}".format(green('set hosts: ')))
         for host in env.hosts:
@@ -98,11 +103,12 @@ def set_all_hosts():
         warn("!!!! {0} !!!!".format(red('NO HOSTS FOUND')))
         return False
 
+
 @task
 def set_hosts_by_ec2_type(vpc='classic'):
     '''
     AWS: set the hosts variable via aws API; filters on vpc-id value.
-        Valid inputs are either 'classic' (default) or a legitimate VpcId value.
+      Valid inputs are either 'classic' (default) or a legitimate VpcId value.
 
     Requires: region, profile
 
@@ -111,12 +117,17 @@ def set_hosts_by_ec2_type(vpc='classic'):
     '''
     require('aws_profile')
     require('aws_region')
-    MATCHVPC=re.compile('vpc-\S{8}')
+    MATCHVPC = re.compile('vpc-\S{8}')
     if vpc == 'classic':
         myfilters = {'instance-state-name': 'running'}
     if MATCHVPC.match(vpc):
         myfilters = {'vpc-id': vpc, 'instance-state-name': 'running'}
-    lib.get_ec2_hosts(region=env.aws_region,profile=env.aws_profile,filters=myfilters, avpc=vpc)
+    lib.get_ec2_hosts(
+        region=env.aws_region,
+        profile=env.aws_profile,
+        filters=myfilters,
+        avpc=vpc
+    )
 
     if env.hosts:
         print("{0}".format(green('set hosts: ')))

@@ -36,6 +36,18 @@ fabricness
 
     $ fab profile:production region:us-east-1 set_hosts_by_ident:my-special-hosts util.command:w
 
+# an example of doing some stuff, then changing host lists, then doing some more stuff and celebrating
+
+    $ fab profile:int region:us-east-1 set_hosts_by_ident:eop-ela-web apt.full_refresh puppet.agent puppet.agent set_hosts_by_ident:eop-ela-stg  apt.full_refresh puppet.agent puppet.agent
+
+Because we have a host configuration task, and the execution model of fabric,
+it's easy to carry out a series of tasks.  Fabric only carries out one of your
+tasks, at a time, but optionally parallel across multiple hosts.
+In the above example, I'm setting my AWS creds with profile and region tasks,
+then I set the hosts by a specific identifier found in the "Name" tag in AWS,
+I clobber the apt cache, then I run puppet twice - and I do that series of tasks twice.
+
+
 # contributing
 
 ## guidelines-ish
