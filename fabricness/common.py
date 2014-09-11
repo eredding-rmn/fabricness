@@ -26,11 +26,14 @@ env.skip_bad_hosts = True
 env.colorize_errors = True
 env.my_poll_timeout = 780
 env.my_sleep = 5
+env.abort_on_prompts = True
 
+env.host_aliases = {}
 
 env.template_dir = "templates"
 env.LOGDIR = "logs"
 env.INSTALLER = "apt-get "
+env.gateway_host_ident = 'eop-sec-prt'
 
 import lib
 import util
@@ -42,5 +45,3 @@ import fluentd
 import network
 import puppet
 import sensu
-
-
