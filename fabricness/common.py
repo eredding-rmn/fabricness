@@ -33,12 +33,13 @@ env.host_aliases = {}
 env.template_dir = "templates"
 env.LOGDIR = "logs"
 env.INSTALLER = "apt-get "
-env.gateway_host_ident = 'eop-sec-prt'
+env.gateway_host_ident = 'eop-sec-prt-001'
 
 import lib
 import util
 import service
 ### import some local libraries
+import apt
 import cpu
 import disk
 import fluentd

@@ -1,10 +1,15 @@
 # -*- coding: UTF-8 -*-
-################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#  ____   __    ___   ___   _   __    _      ____  __   __
+# | |_   / /\  | |_) | |_) | | / /`  | |\ | | |_  ( (` ( (`
+# |_|   /_/--\ |_|_) |_| \ |_| \_\_, |_| \| |_|__ _)_) _)_)
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#  basic fabric tasks for productivity; in this case: network
 
 from fabric.colors import *
 from fabric.api import *
 
-number_format='M'
+number_format = 'M'
 
 """
 Example of use:
@@ -14,6 +19,7 @@ fab network.run_test:perf_port=24224,perf_server=firsthost,perf_client=secondhos
 __all__ = [
     'run_test'
 ]
+
 
 @task
 def run_test(perf_port, perf_client, perf_server):
@@ -74,7 +80,13 @@ def start_iperf_server():
     require('perf_port')
     iperf_flag_port = '--port {0}'.format(env.perf_port)
     iperf_format = '--format {0}'.format(number_format)
-    sudo('iperf -D --server {0} -o {1}.iperf.log {2} 2>&1; sleep 2'.format(iperf_format, env.host_string, iperf_flag_port))
+    sudo(
+        'iperf -D --server {0} -o {1}.iperf.log {2} 2>&1; sleep 2'.format(
+            iperf_format,
+            env.host_string,
+            iperf_flag_port
+        )
+    )
 
 
 @task
@@ -96,4 +108,10 @@ def start_iperf_client():
     iperf_flags_client = '--client {0}'.format(env.perf_server)
     iperf_flag_port = '--port {0}'.format(env.perf_port)
     iperf_format = '--format {0}'.format(number_format)
-    sudo('iperf {0}  {1}  {2} -t 60 -i 10'.format(iperf_format, iperf_flag_port, iperf_flags_client))
+    sudo(
+        'iperf {0}  {1}  {2} -t 60 -i 10'.format(
+            iperf_format,
+            iperf_flag_port,
+            iperf_flags_client
+        )
+    )
