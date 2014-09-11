@@ -81,7 +81,10 @@ def filter_hosts(raw_hosts_list, host_filter):
         ip = hst.get('PrivateIpAddress')
         pub_ip = hst.get('PublicIpAddress')
         gwfound = re.search(env.gateway_host_ident, hn)
-        hstmatch = re.search(host_filter, hn)
+        if host_filter:
+            hstmatch = re.search(host_filter, hn)
+        else:
+            hstmatch = True
         if not hn:
             hn = ip
         if vpcid is None:
